@@ -39,6 +39,10 @@ const learnerSchema = new mongoose.Schema({
   partnerRef: {
     type: String,
     default: null
+  },
+  consentGiven: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 

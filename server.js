@@ -16,7 +16,11 @@ const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const swaggerDocument = YAML.load('./openapi.yaml');
 // Middleware
-app.use(cors()); // Allows the frontend to talk to us
+app.use(cors({
+  origin: '*', 
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+}));
 app.use(express.json()); // Parses incoming JSON payloads
 
 

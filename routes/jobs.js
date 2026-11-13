@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Job = require('../models/Job');
 
-// @route   GET /api/jobs
-// @desc    Get all jobs, optionally filter by support accommodations
+
 router.get('/', async (req, res) => {
   try {
     let query = {};
@@ -16,6 +15,27 @@ router.get('/', async (req, res) => {
     }
 
     const jobs = await Job.find(query).sort({ createdAt: -1 });
+
+    // LEVEL 3 BONUS: Check if the client wants JSON-LD for search engines
+    if (req.headers.accept === 'application/ld+json' || req.query.format === 'jsonld')  {
+      const jsonLdJobs = jobs.map(job => ({
+        "@context": "https://schema.org/",
+        "@type": "JobPosting",
+        "title": job.title,
+        "description": job.description,
+        "hiringOrganization": {
+          "@type": "Organization",
+          "name": job.employer
+        },
+        "datePosted": job.createdAt.toISOString(),
+        // Map custom accommodations to schema.org's physicalRequirement (plain text)
+        "physicalRequirement": job.accommodations.join(', ') || "None specified"
+      }));
+      
+      return res.status(200).json(jsonLdJobs);
+    }
+
+    // Default JSON response
     res.status(200).json({ jobs, total: jobs.length });
   } catch (error) {
     console.error(error);

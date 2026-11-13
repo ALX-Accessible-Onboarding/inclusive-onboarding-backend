@@ -4,6 +4,8 @@ info:
   description: Backend REST APIs for the ALX Accessible Onboarding Hackathon.
   version: 1.0.0
 servers:
+  - url: https://inclusive-onboarding-backend.onrender.com/api
+    description: Production Server (Render)
   - url: http://localhost:4000/api
     description: Local Development Server
 

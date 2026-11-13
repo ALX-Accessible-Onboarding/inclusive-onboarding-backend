@@ -12,6 +12,9 @@ const referralsRouter = require('./routes/referrals');
 const progressRouter = require('./routes/progress');
 const jobsRouter = require('./routes/jobs');
 const applicationsRouter = require('./routes/applications');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const swaggerDocument = YAML.load('./openapi.yaml');
 // Middleware
 app.use(cors()); // Allows the frontend to talk to us
 app.use(express.json()); // Parses incoming JSON payloads
@@ -24,6 +27,10 @@ app.use('/api/referrals', referralsRouter);
 app.use('/api/progress', progressRouter);
 app.use('/api/jobs', jobsRouter);
 app.use('/api/applications', applicationsRouter);
+
+
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Basic health check route
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Inclusive Onboarding API is running' });

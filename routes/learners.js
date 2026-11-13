@@ -6,7 +6,7 @@ const Learner = require('../models/Learner');
 // @desc    Create a new learner profile
 router.post('/', async (req, res) => {
   try {
-    const { name, contact, idRoute, idNumber, mode, language, partnerRef } = req.body;
+    const { name, contact, idRoute, idNumber, mode, language, partnerRef, consentGiven } = req.body;
 
     // 1. Basic manual validation for plain-language errors
     let errors = {};
@@ -35,13 +35,13 @@ router.post('/', async (req, res) => {
       idNumber: idNumber || null,
       mode: mode || 'standard',
       language: language || 'en',
-      partnerRef: partnerRef || null
+      partnerRef: partnerRef || null,
+      consentGiven: consentGiven || false
     });
 
     // 4. Return 201 Created
     res.status(201).json(learner);
   } catch (error) {
-    // Fallback for any unexpected DB errors
     console.error(error);
     res.status(500).json({ errors: { _: 'Something went wrong. Please try again.' } });
   }

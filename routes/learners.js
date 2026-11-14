@@ -47,4 +47,52 @@ router.post('/', async (req, res) => {
   }
 });
 
+// @route   GET /api/learners/:id
+// @desc    Get a learner's profile
+router.get('/:id', async (req, res) => {
+  try {
+    const cleanId = req.params.id.replace('lrn_', '');
+    const learner = await Learner.findById(cleanId);
+    
+    if (!learner) {
+      return res.status(404).json({ errors: { _: 'Learner not found.' } });
+    }
+
+    res.status(200).json(learner);
+  } catch (error) {
+    console.error(error);
+    if (error.kind === 'ObjectId') {
+      return res.status(404).json({ errors: { _: 'Invalid Learner ID format.' } });
+    }
+    res.status(500).json({ errors: { _: 'Something went wrong fetching the profile.' } });
+  }
+});
+
+// @route   PATCH /api/learners/:id
+// @desc    Update a learner's profile (used on the Edit Profile page)
+router.patch('/:id', async (req, res) => {
+  try {
+    const cleanId = req.params.id.replace('lrn_', '');
+    const updates = req.body;
+
+    const learner = await Learner.findByIdAndUpdate(
+      cleanId,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
+    if (!learner) {
+      return res.status(404).json({ errors: { _: 'Learner not found.' } });
+    }
+
+    res.status(200).json(learner);
+  } catch (error) {
+    console.error(error);
+    if (error.kind === 'ObjectId') {
+      return res.status(404).json({ errors: { _: 'Invalid Learner ID format.' } });
+    }
+    res.status(500).json({ errors: { _: 'Something went wrong updating the profile.' } });
+  }
+});
+
 module.exports = router;

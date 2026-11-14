@@ -7,7 +7,7 @@ const Learner = require('../models/Learner');
 // @desc    Create or update private support needs
 router.post('/:id/support', async (req, res) => {
   try {
-    const learnerId = req.params.id.replace('lrn_', ''); // Strip prefix for DB query
+    const learnerId = req.params.id.replace('lrn_', ''); 
     const { items } = req.body;
 
     // Check if learner exists
@@ -20,13 +20,16 @@ router.post('/:id/support', async (req, res) => {
     const supportRecord = await SupportNeed.findOneAndUpdate(
       { learnerId: learnerId },
       { items, private: true },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
+      { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
     );
 
     res.status(201).json(supportRecord);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ errors: { _: 'Something went wrong. Please try again.' } });
+    if (error.kind === 'ObjectId') {
+      return res.status(404).json({ errors: { _: 'Invalid Learner ID format.' } });
+    }
+    res.status(500).json({ errors: { _: 'Something went wrong saving support data.' } });
   }
 });
 
@@ -35,6 +38,12 @@ router.post('/:id/support', async (req, res) => {
 router.get('/:id/support', async (req, res) => {
   try {
     const learnerId = req.params.id.replace('lrn_', '');
+    
+    // We check if the ID is valid before doing a findOne to prevent the 500 error
+    if (!learnerId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(404).json({ errors: { _: 'Invalid Learner ID format.' } });
+    }
+
     const supportRecord = await SupportNeed.findOne({ learnerId: learnerId });
 
     if (!supportRecord) {
@@ -44,7 +53,7 @@ router.get('/:id/support', async (req, res) => {
     res.status(200).json(supportRecord);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ errors: { _: 'Something went wrong. Please try again.' } });
+    res.status(500).json({ errors: { _: 'Something went wrong fetching support data.' } });
   }
 });
 

@@ -27,7 +27,23 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ errors });
     }
 
-    // 3. Create the learner in the database
+    // 3. Check for exact duplicate (Same name AND same contact value)
+    // This prevents accidental double-submissions while still allowing family members to share a phone.
+    const existingLearner = await Learner.findOne({
+      name: name,
+      'contact.value': contact.value
+    });
+
+    if (existingLearner) {
+      return res.status(409).json({ 
+        errors: { 
+          _: 'This profile already exists. Loading your data...' 
+        },
+        existingId: existingLearner.id
+      });
+    }
+
+    // 4. Create the learner in the database
     const learner = await Learner.create({
       name,
       contact,
@@ -39,7 +55,7 @@ router.post('/', async (req, res) => {
       consentGiven: consentGiven || false
     });
 
-    // 4. Return 201 Created
+    // 5. Return 201 Created
     res.status(201).json(learner);
   } catch (error) {
     console.error(error);
@@ -69,7 +85,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // @route   PATCH /api/learners/:id
-// @desc    Update a learner's profile (used on the Edit Profile page)
+// @desc    Update a learner's profile
 router.patch('/:id', async (req, res) => {
   try {
     const cleanId = req.params.id.replace('lrn_', '');

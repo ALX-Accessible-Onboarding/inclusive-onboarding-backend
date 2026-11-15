@@ -4,9 +4,9 @@ info:
   description: Backend REST APIs for the ALX Accessible Onboarding Hackathon.
   version: 1.0.0
 servers:
-  - url: https://inclusive-onboarding-backend.onrender.com/api
+  - url: https://inclusive-onboarding-backend.onrender.com/api/v1
     description: Production Server (Render)
-  - url: http://localhost:4000/api
+  - url: http://localhost:4000/api/v1
     description: Local Development Server
 
 paths:
@@ -33,6 +33,10 @@ paths:
                 idRoute:
                   type: string
                   enum: [kebele, passport, refugee, other_document, referral]
+                partnerRef:
+                  type: string
+                consentGiven:
+                  type: boolean
       responses:
         '201':
           description: Learner created successfully
@@ -47,8 +51,51 @@ paths:
                     type: object
                     example: { "contact.value": "Your phone number looks short." }
 
+  /learners/{id}:
+    get:
+      summary: Get a learner's profile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Learner profile retrieved
+        '404':
+          description: Learner not found
+    patch:
+      summary: Update a learner's profile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Learner updated successfully
+    delete:
+      summary: Delete a learner and all associated data
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Learner deleted successfully
+
   /learners/{id}/support:
-    post:
+    put:
       summary: Save private support needs
       parameters:
         - in: path
@@ -69,8 +116,34 @@ paths:
                     type: string
                     enum: [read_aloud, larger_text, voice_input, more_time, sign_language, other]
       responses:
-        '201':
+        '200':
           description: Support needs saved successfully
+    get:
+      summary: Get private support needs
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Support needs retrieved successfully
+        '404':
+          description: Support record not found
+
+  /learners/{id}/export:
+    get:
+      summary: Export all data for a learner
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Learner data exported successfully
 
   /referrals:
     post:
@@ -116,6 +189,21 @@ paths:
         '201':
           description: Progress saved successfully
 
+  /progress/{sessionId}:
+    get:
+      summary: Get form progress for resume
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Progress retrieved successfully
+        '404':
+          description: Progress not found
+
   /jobs:
     get:
       summary: Retrieve jobs, optionally filtered by accommodations
@@ -125,33 +213,16 @@ paths:
           schema:
             type: string
           description: Comma-separated list of accommodations (e.g. read_aloud,flexible_hours)
+        - in: query
+          name: format
+          schema:
+            type: string
+          description: Set to 'jsonld' for schema.org/JobPosting output
       responses:
         '200':
           description: A list of jobs
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  jobs:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        title:
-                          type: string
-                        employer:
-                          type: string
-                        accommodations:
-                          type: array
-                          items:
-                            type: string
-
-  /voice/speak:
     post:
-      summary: Generate Amharic audio (Text-to-Speech)
+      summary: Employer creates a job
       requestBody:
         required: true
         content:
@@ -159,13 +230,38 @@ paths:
             schema:
               type: object
               properties:
-                text:
+                title:
                   type: string
-                  example: "ሰላም እንዴት ነህ?"
+                employer:
+                  type: string
+                description:
+                  type: string
+                accommodations:
+                  type: array
+                  items:
+                    type: string
       responses:
-        '200':
-          description: Returns an audio/wav file
-        '400':
-          description: Invalid text provided
-        '500':
-          description: Voice service error
+        '201':
+          description: Job created successfully
+
+  /applications:
+    post:
+      summary: Learner applies for a job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                learnerId:
+                  type: string
+                jobId:
+                  type: string
+                answers:
+                  type: object
+                supportRequested:
+                  type: boolean
+      responses:
+        '201':
+          description: Application submitted successfully

@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const Learner = require('../models/Learner');
-const Referral = require('../models/Referral'); // <-- Imported the Referral model
+const Referral = require('../models/Referral');
+const SupportNeed = require('../models/SupportNeed');
+const Application = require('../models/Application');
 
-// @route   POST /api/learners
+// @route   POST /api/v1/learners
 // @desc    Create a new learner profile
 router.post('/', async (req, res) => {
   try {
@@ -28,7 +30,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ errors });
     }
 
-    // 3. Check for exact duplicate (Same name AND same contact value)
+    // 3. Check for exact duplicate
     const existingLearner = await Learner.findOne({
       name: name,
       'contact.value': contact.value
@@ -36,14 +38,12 @@ router.post('/', async (req, res) => {
 
     if (existingLearner) {
       return res.status(409).json({ 
-        errors: { 
-          _: 'This profile already exists. Loading your data...' 
-        },
+        errors: { _: 'This profile already exists. Loading your data...' },
         existingId: existingLearner.id
       });
     }
 
-    // 4. Create the learner in the database
+    // 4. Create the learner
     const learner = await Learner.create({
       name,
       contact,
@@ -55,17 +55,16 @@ router.post('/', async (req, res) => {
       consentGiven: consentGiven || false
     });
 
-    // 5. BONUS LOGIC: If a partner registered them, create a pending Referral
+    // 5. Create pending Referral if partner
     if (partnerRef && consentGiven) {
       await Referral.create({
         learnerId: learner._id,
         partner: partnerRef,
-        contactPreference: contact.type, // 'phone' or 'email'
-        status: 'pending' // ALX staff will review this later
+        contactPreference: contact.type,
+        status: 'pending'
       });
     }
 
-    // 6. Return 201 Created
     res.status(201).json(learner);
   } catch (error) {
     console.error(error);
@@ -73,7 +72,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// @route   GET /api/learners/:id
+// @route   GET /api/v1/learners/:id
 // @desc    Get a learner's profile
 router.get('/:id', async (req, res) => {
   try {
@@ -94,7 +93,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// @route   PATCH /api/learners/:id
+// @route   PATCH /api/v1/learners/:id
 // @desc    Update a learner's profile
 router.patch('/:id', async (req, res) => {
   try {
@@ -118,6 +117,49 @@ router.patch('/:id', async (req, res) => {
       return res.status(404).json({ errors: { _: 'Invalid Learner ID format.' } });
     }
     res.status(500).json({ errors: { _: 'Something went wrong updating the profile.' } });
+  }
+});
+
+// @route   GET /api/v1/learners/:id/export
+// @desc    Export all data for a learner (Privacy requirement)
+router.get('/:id/export', async (req, res) => {
+  try {
+    const cleanId = req.params.id.replace('lrn_', '');
+    
+    const learner = await Learner.findById(cleanId);
+    if (!learner) return res.status(404).json({ errors: { _: 'Learner not found.' } });
+
+    const support = await SupportNeed.findOne({ learnerId: cleanId });
+    const applications = await Application.find({ learnerId: cleanId });
+    const referrals = await Referral.find({ learnerId: cleanId });
+
+    res.status(200).json({
+      profile: learner,
+      supportNeeds: support ? support.items : [],
+      applications: applications,
+      referrals: referrals
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ errors: { _: 'Export failed.' } });
+  }
+});
+
+// @route   DELETE /api/v1/learners/:id
+// @desc    Delete a learner and all their data (Privacy requirement)
+router.delete('/:id', async (req, res) => {
+  try {
+    const cleanId = req.params.id.replace('lrn_', '');
+    
+    await Learner.findByIdAndDelete(cleanId);
+    await SupportNeed.deleteMany({ learnerId: cleanId });
+    await Application.deleteMany({ learnerId: cleanId });
+    await Referral.deleteMany({ learnerId: cleanId });
+
+    res.status(200).json({ message: 'Learner and all associated data deleted successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ errors: { _: 'Deletion failed.' } });
   }
 });
 

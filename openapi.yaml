@@ -148,3 +148,23 @@ paths:
                           type: array
                           items:
                             type: string
+                              /voice/speak:
+    post:
+      summary: Generate Amharic audio (Text-to-Speech)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  example: "ሰላም እንዴት ነህ?"
+      responses:
+        '200':
+          description: Returns an audio/wav file
+        '400':
+          description: Invalid text provided
+        '500':
+          description: Voice service error

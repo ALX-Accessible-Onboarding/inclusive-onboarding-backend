@@ -148,7 +148,8 @@ paths:
                           type: array
                           items:
                             type: string
-                              /voice/speak:
+
+  /voice/speak:
     post:
       summary: Generate Amharic audio (Text-to-Speech)
       requestBody:

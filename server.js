@@ -15,6 +15,7 @@ const applicationsRouter = require('./routes/applications');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const swaggerDocument = YAML.load('./openapi.yaml');
+const voiceRouter = require('./routes/voice');
 // Middleware
 app.use(cors({
   origin: '*', 
@@ -31,6 +32,7 @@ app.use('/api/referrals', referralsRouter);
 app.use('/api/progress', progressRouter);
 app.use('/api/jobs', jobsRouter);
 app.use('/api/applications', applicationsRouter);
+app.use('/api/voice', voiceRouter);
 
 
 

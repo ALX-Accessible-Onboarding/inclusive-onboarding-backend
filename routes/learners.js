@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Learner = require('../models/Learner');
+const Referral = require('../models/Referral'); // <-- Imported the Referral model
 
 // @route   POST /api/learners
 // @desc    Create a new learner profile
@@ -28,7 +29,6 @@ router.post('/', async (req, res) => {
     }
 
     // 3. Check for exact duplicate (Same name AND same contact value)
-    // This prevents accidental double-submissions while still allowing family members to share a phone.
     const existingLearner = await Learner.findOne({
       name: name,
       'contact.value': contact.value
@@ -55,7 +55,17 @@ router.post('/', async (req, res) => {
       consentGiven: consentGiven || false
     });
 
-    // 5. Return 201 Created
+    // 5. BONUS LOGIC: If a partner registered them, create a pending Referral
+    if (partnerRef && consentGiven) {
+      await Referral.create({
+        learnerId: learner._id,
+        partner: partnerRef,
+        contactPreference: contact.type, // 'phone' or 'email'
+        status: 'pending' // ALX staff will review this later
+      });
+    }
+
+    // 6. Return 201 Created
     res.status(201).json(learner);
   } catch (error) {
     console.error(error);
